@@ -1,0 +1,32 @@
+services:
+  moria-server:
+    image: ghcr.io/teriyakidactyl/docker-moria:latest
+    build:
+      context: .
+      args:
+        BASE_TAG: ${BASE_TAG:-trixie_wine-staging}
+    container_name: moria-server
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      SERVER_LISTEN_ADDRESS: ${SERVER_LISTEN_ADDRESS:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-7777}
+      SERVER_ADVERTISE_ADDRESS: ${SERVER_ADVERTISE_ADDRESS:-}
+      SERVER_ADVERTISE_PORT: ${SERVER_ADVERTISE_PORT:-7777}
+      SERVER_PASS: ${SERVER_PASS:-}
+      WORLD_NAME: ${WORLD_NAME:-Moria Docker World}
+      WORLD_FILE: ${WORLD_FILE:-}
+      SERVER_WORKER_THREADS: ${SERVER_WORKER_THREADS:-4}
+      STEAM_VALIDATE: ${STEAM_VALIDATE:-false}
+      UPDATE_ON_START: ${UPDATE_ON_START:-true}
+    ports:
+      - "${SERVER_ADVERTISE_PORT:-7777}:${SERVER_PORT:-7777}/udp"
+    volumes:
+      - moria_app:/app
+      - moria_world:/world
+
+volumes:
+  moria_app:
+    name: moria_app
+  moria_world:
+    name: moria_world
