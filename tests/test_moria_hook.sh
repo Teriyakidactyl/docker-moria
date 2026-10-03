@@ -7,6 +7,59 @@ HOOK="$REPO_ROOT/scripts/container/hooks/pre-startup/30_moria.sh"
 TMP_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
+FAKE_BIN="$TMP_ROOT/bin"
+export WINEPREFIX="$TMP_ROOT/wine"
+export MORIA_WINE_COMMAND="$FAKE_BIN/moria-wine"
+export MORIA_WINESERVER_COMMAND="$FAKE_BIN/moria-wineserver"
+export MORIA_WINETRICKS_CACHE="$TMP_ROOT/winetricks-cache"
+export MORIA_TEST_WINETRICKS_LOG="$TMP_ROOT/winetricks.log"
+
+mkdir -p "$FAKE_BIN" "$WINEPREFIX" "$MORIA_WINETRICKS_CACHE"
+
+cat > "$FAKE_BIN/xvfb-run" <<'EOF'
+#!/bin/bash
+set -e
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --auto-servernum|--server-args=*)
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+exec "$@"
+EOF
+
+cat > "$FAKE_BIN/winetricks" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$*" >> "$MORIA_TEST_WINETRICKS_LOG"
+EOF
+
+cat > "$FAKE_BIN/cabextract" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+
+cat > "$MORIA_WINE_COMMAND" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+
+cat > "$MORIA_WINESERVER_COMMAND" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+
+chmod 0755 \
+    "$FAKE_BIN/xvfb-run" \
+    "$FAKE_BIN/winetricks" \
+    "$FAKE_BIN/cabextract" \
+    "$MORIA_WINE_COMMAND" \
+    "$MORIA_WINESERVER_COMMAND"
+export PATH="$FAKE_BIN:$PATH"
+
 export APP_FILES="$TMP_ROOT/app"
 export WORLD_FILES="$TMP_ROOT/world"
 export APP_EXECUTABLE="$APP_FILES/Moria/Binaries/Win64/MoriaServer-Win64-Shipping.exe"
@@ -59,6 +112,10 @@ printf '\x02\x00' | dd of="$APP_EXECUTABLE" bs=1 seek=220 conv=notrunc status=no
 
 source "$HOOK"
 
+test -f "$WINEPREFIX/.moria-vcrun2022"
+test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
+grep -Fqx -- '-q vcrun2022' "$MORIA_TEST_WINETRICKS_LOG"
+
 test -L "$APP_FILES/Moria/Saved"
 test "$(readlink "$APP_FILES/Moria/Saved")" = "$WORLD_FILES/Saved"
 test -f "$WORLD_FILES/Saved/SaveGamesDedicated/MW_TEST_WORLD.sav"
@@ -87,5 +144,6 @@ config_before="$(sha256sum "$config" | awk '{print $1}')"
 source "$HOOK"
 config_after="$(sha256sum "$config" | awk '{print $1}')"
 test "$config_before" = "$config_after"
+test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
 
 echo "Moria hook contract test passed"
