@@ -49,6 +49,9 @@ jobs:
           dockerfile: Dockerfile
           failure-threshold: error
 
+      - name: Test Moria hook contract
+        run: bash tests/test_moria_hook.sh
+
       - name: Validate Compose
         run: docker compose config >/dev/null
 
