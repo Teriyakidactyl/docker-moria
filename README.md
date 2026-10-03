@@ -36,7 +36,10 @@ The container exposes a small set of common settings and keeps
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SERVER_PORT` | `7777` | Internal listen and advertised UDP port |
+| `SERVER_LISTEN_ADDRESS` | `0.0.0.0` | Address Moria binds inside the container |
+| `SERVER_PORT` | `7777` | Internal UDP listen port |
+| `SERVER_ADVERTISE_ADDRESS` | empty | Optional address Moria advertises to clients |
+| `SERVER_ADVERTISE_PORT` | `7777` | External UDP port advertised to clients |
 | `SERVER_PASS` | empty | Optional join password |
 | `WORLD_NAME` | `Moria Docker World` | World/session name |
 | `WORLD_FILE` | empty | Optional existing `.sav` filename |
@@ -73,9 +76,12 @@ A typical Compose deployment uses named volumes for both paths.
 
 ## Networking
 
-Moria listens on UDP `7777` by default. If the externally published port is
-changed, set `SERVER_PORT` consistently so Moria advertises the same port that
-clients use.
+Moria listens on UDP `7777` by default. `SERVER_PORT` controls the internal
+container listen port, while `SERVER_ADVERTISE_PORT` controls the host-facing
+port published by the supplied Compose file and advertised to clients. Keep the
+advertised value aligned with your router/NAT forwarding. `SERVER_ADVERTISE_ADDRESS`
+can be set when the server must publish a specific address instead of relying on
+upstream discovery.
 
 Direct joins require the host/network path to permit the configured UDP port.
 Invite-code joins still depend on the upstream online services used by the
