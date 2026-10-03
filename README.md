@@ -18,8 +18,8 @@ server as a non-root Docker container built on
 
 The image deliberately keeps generic SteamCMD, Wine, update, logging, health,
 process-lifecycle, and architecture behavior in the shared base. This repository
-contains only Moria-specific startup, persistence, configuration, and
-health-check behavior.
+contains only Moria-specific startup, persistence, configuration, dependency,
+and health-check behavior.
 
 ## Quick start
 
@@ -28,8 +28,10 @@ docker compose up -d
 docker compose logs -f moria-server
 ```
 
-The first start downloads the dedicated server through SteamCMD. Application
-files live in `/app`; durable game state lives in `/world`.
+The first start downloads the dedicated server through SteamCMD and installs
+Moria's required Microsoft Visual C++ 2015–2022 runtime into the persistent Wine
+prefix. Application files and compatibility state live in `/app`; durable game
+state lives in `/world`. Later starts reuse the initialized prefix.
 
 The default game port is UDP `7777`.
 
@@ -69,7 +71,7 @@ The image uses the shared game-server persistence contract:
 
 | Path | Role |
 | --- | --- |
-| `/app` | Steam-installed application files, Steam state, and persistent Wine prefix |
+| `/app` | Steam-installed application files, Steam state, persistent Wine prefix, and Moria compatibility dependencies |
 | `/world` | Moria configuration, saves, logs, status, and other game-owned state |
 
 Moria's `Moria/Saved` directory is linked into `/world/Saved`. The top-level
@@ -95,6 +97,10 @@ dedicated server.
 
 The server executable is installed from Steam AppID `3349480` for the Windows
 platform and runs under the Wine variant of `docker-steamcmd-server`.
+
+After the shared base initializes the persistent Wine prefix, the Moria pre-start
+hook installs `vcrun2022` with a commit-pinned Winetricks script. The install is
+Moria-specific and idempotent; the shared Wine base remains game-agnostic.
 
 Moria's shipping executable is patched after SteamCMD updates so its Windows PE
 subsystem exposes a console. The container then sends `SIGINT` during normal
@@ -137,9 +143,10 @@ duplicating it in the Moria image.
 
 Changes should preserve these boundaries:
 
-- the Dockerfile describes Moria-specific image/runtime defaults;
-- the pre-start hook owns Moria persistence, native configuration, and the
-  console-subsystem patch;
+- the Dockerfile describes Moria-specific image/runtime defaults and packaged
+  prerequisites;
+- the pre-start hook owns Moria compatibility initialization, persistence,
+  native configuration, and the console-subsystem patch;
 - the health-check script owns Moria protocol readiness;
 - CI validates the derivative image without reimplementing the base image's
   generic lifecycle; and
