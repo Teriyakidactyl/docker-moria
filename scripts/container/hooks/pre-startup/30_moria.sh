@@ -153,7 +153,7 @@ ensure_vcrun2022() {
 
     wine_command="${MORIA_WINE_COMMAND:-/usr/local/bin/moria-wine}"
     wineserver_command="${MORIA_WINESERVER_COMMAND:-/usr/local/bin/moria-wineserver}"
-    cache_dir="${MORIA_WINETRICKS_CACHE:-/usr/local/share/moria/winetricks-cache}"
+    cache_dir="${MORIA_WINETRICKS_CACHE:-$WINEPREFIX/.winetricks-cache}"
 
     [ -x "$wine_command" ] || {
         fail "Moria Wine command is not executable: $wine_command"
@@ -163,6 +163,8 @@ ensure_vcrun2022() {
         fail "Moria wineserver command is not executable: $wineserver_command"
         return 1
     }
+
+    mkdir -p "$cache_dir"
 
     log "Installing Visual C++ 2015-2022 runtime into $WINEPREFIX" "$HOOK_NAME"
     WINE="$wine_command" \
