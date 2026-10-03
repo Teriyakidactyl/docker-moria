@@ -8,6 +8,10 @@ description: >-
 
 # Return to Moria Dedicated Server
 
+![Teriyakidactyl Delivers!™](/images/teriyakidactyl_moria.png)
+
+**_Teriyakidactyl Delivers!™_**
+
 This repository packages **The Lord of the Rings: Return to Moria** dedicated
 server as a non-root Docker container built on
 [`docker-steamcmd-server`](https://github.com/Teriyakidactyl/docker-steamcmd-server).
