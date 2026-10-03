@@ -15,6 +15,7 @@ ENV APP_NAME="moria" \
     APP_LOG_NAME="moria-server" \
     APP_ARGS_FILE="/usr/local/share/moria/moria.args" \
     APP_STOP_SIGNAL="INT" \
+    SHUTDOWN_TIMEOUT="25" \
     STEAM_SERVER_APPID="3349480" \
     STEAM_PLATFORM_TYPE="windows" \
     SERVER_LISTEN_ADDRESS="0.0.0.0" \
