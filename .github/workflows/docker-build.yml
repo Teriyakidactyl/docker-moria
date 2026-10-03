@@ -8,6 +8,7 @@ on:
       - 'docker-compose.yml'
       - '.github/workflows/**'
       - 'scripts/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +16,7 @@ on:
       - 'docker-compose.yml'
       - '.github/workflows/**'
       - 'scripts/**'
+      - 'tests/**'
       - 'README.md'
   workflow_dispatch:
 
@@ -40,8 +42,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
-          find scripts -type f -name '*.sh' -print0 | xargs -0 -r bash -n
-          find scripts -type f -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r bash -n
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
 
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
@@ -49,8 +51,11 @@ jobs:
           dockerfile: Dockerfile
           failure-threshold: error
 
-      - name: Test Moria hook contract
-        run: bash tests/test_moria_hook.sh
+      - name: Test Moria contracts
+        run: |
+          for test_script in tests/test_*.sh; do
+            bash "$test_script"
+          done
 
       - name: Validate Compose
         run: docker compose config >/dev/null
