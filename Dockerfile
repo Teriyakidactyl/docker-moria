@@ -35,7 +35,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends cabextract; \
     rm -rf /var/lib/apt/lists/*; \
-    mkdir -p /usr/local/share/moria/winetricks-cache "${HOOK_DIRECTORIES}/pre-startup"; \
+    mkdir -p /usr/local/share/moria "${HOOK_DIRECTORIES}/pre-startup"; \
     curl --fail --show-error --silent --location \
         --retry 5 --retry-all-errors --connect-timeout 15 \
         "https://raw.githubusercontent.com/Winetricks/winetricks/${WINETRICKS_REF}/src/winetricks" \
