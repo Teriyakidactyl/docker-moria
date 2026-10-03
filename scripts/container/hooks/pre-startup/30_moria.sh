@@ -124,6 +124,59 @@ persist_path() {
     ln -s "$target_path" "$source_path"
 }
 
+ensure_vcrun2022() {
+    local marker
+    local wine_command
+    local wineserver_command
+    local cache_dir
+
+    : "${WINEPREFIX:?WINEPREFIX is required}"
+
+    marker="$WINEPREFIX/.moria-vcrun2022"
+    if [ -f "$marker" ]; then
+        log "Visual C++ 2015-2022 runtime already installed" "$HOOK_NAME"
+        return 0
+    fi
+
+    command -v winetricks >/dev/null 2>&1 || {
+        fail "winetricks is required to install vcrun2022"
+        return 1
+    }
+    command -v xvfb-run >/dev/null 2>&1 || {
+        fail "xvfb-run is required to install vcrun2022"
+        return 1
+    }
+    command -v cabextract >/dev/null 2>&1 || {
+        fail "cabextract is required to install vcrun2022"
+        return 1
+    }
+
+    wine_command="${MORIA_WINE_COMMAND:-/usr/local/bin/moria-wine}"
+    wineserver_command="${MORIA_WINESERVER_COMMAND:-/usr/local/bin/moria-wineserver}"
+    cache_dir="${MORIA_WINETRICKS_CACHE:-/usr/local/share/moria/winetricks-cache}"
+
+    [ -x "$wine_command" ] || {
+        fail "Moria Wine command is not executable: $wine_command"
+        return 1
+    }
+    [ -x "$wineserver_command" ] || {
+        fail "Moria wineserver command is not executable: $wineserver_command"
+        return 1
+    }
+
+    log "Installing Visual C++ 2015-2022 runtime into $WINEPREFIX" "$HOOK_NAME"
+    WINE="$wine_command" \
+        WINE64="$wine_command" \
+        WINESERVER="$wineserver_command" \
+        W_CACHE="$cache_dir" \
+        xvfb-run --auto-servernum \
+            "--server-args=-screen 0 640x480x24:32 -nolisten tcp" \
+            winetricks -q vcrun2022
+
+    touch "$marker"
+    log "Visual C++ 2015-2022 runtime is ready" "$HOOK_NAME"
+}
+
 patch_console_subsystem() {
     local executable="$1"
     local pe_offset signature magic subsystem_offset subsystem
@@ -173,6 +226,8 @@ patch_console_subsystem() {
             ;;
     esac
 }
+
+ensure_vcrun2022
 
 validate_integer_range SERVER_PORT "${SERVER_PORT:-7777}" 1 65535
 validate_integer_range SERVER_ADVERTISE_PORT "${SERVER_ADVERTISE_PORT:-7777}" 1 65535
