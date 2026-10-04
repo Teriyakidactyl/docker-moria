@@ -188,11 +188,9 @@ their native control format.
 
 ## ✍ Contributing
 
-This repository follows the semantic-routing conventions defined by
-[`Repo-Manager`](https://github.com/Teriyakidactyl/Repo-Manager). When changing
-canonical source, begin at this README, follow any README ancestry to the target,
-and keep generic runtime behavior in the shared SteamCMD base rather than
-duplicating it in the Moria image.
+When changing canonical source, begin at this README, follow any README ancestry
+to the target, and keep generic runtime behavior in the shared SteamCMD base
+rather than duplicating it in the Moria image.
 
 Changes should preserve these boundaries:
 
