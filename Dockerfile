@@ -1,14 +1,23 @@
+# trixie_wine-staging is intentionally a floating *supported* base alias. The
+# shared base only moves that alias after its architecture/runtime publication
+# gates pass, so rebuilding Moria adopts a validated Wine/runtime repair without
+# copying Wine version policy into this derivative. Override BASE_TAG with a
+# versioned tag only when an intentionally pinned derivative release is needed.
 ARG BASE_IMAGE=ghcr.io/teriyakidactyl/docker-steamcmd-server
 ARG BASE_TAG=trixie_wine-staging
 
 FROM ${BASE_IMAGE}:${BASE_TAG}
 
+# Re-declare pre-FROM args so they are available to image metadata below.
+ARG BASE_IMAGE
+ARG BASE_TAG
 ARG WINETRICKS_REF=f3890f670867b5ffbc3938726db45c0f7d16c8ba
 
 LABEL org.opencontainers.image.title="Return to Moria Dedicated Server" \
       org.opencontainers.image.description="Return to Moria dedicated server based on docker-steamcmd-server" \
       org.opencontainers.image.vendor="TeriyakiDactyl" \
-      org.opencontainers.image.source="https://github.com/Teriyakidactyl/docker-moria"
+      org.opencontainers.image.source="https://github.com/Teriyakidactyl/docker-moria" \
+      org.opencontainers.image.base.name="${BASE_IMAGE}:${BASE_TAG}"
 
 ENV APP_NAME="moria" \
     APP_EXE="MoriaServer-Win64-Shipping.exe" \
