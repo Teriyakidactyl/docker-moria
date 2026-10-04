@@ -24,3 +24,10 @@ An existing `/app/Moria/Saved -> /world/Saved` symlink is not sufficient by
 itself: the hook also materializes `/world/Saved` so a retained application
 volume cannot leave Moria with a dangling save path when the world volume is
 fresh, restored, or incomplete.
+
+The INI projection is intentionally declarative and bounded. The image-owned
+`moria-server-config.owned.ini.in` template links the upstream settings sources,
+`envsubst` renders an explicit allow-list of validated internal values, and the
+hook reconciles only those section/key pairs into the persistent file. Unknown
+settings survive game updates, dotted keys are matched literally, and a
+converged file is not replaced on every boot.

@@ -1,0 +1,50 @@
+; This file is the container-owned desired-state fragment for MoriaServerConfig.ini.
+; The pre-start hook merges only these known keys into the persistent native file,
+; preserving unknown/future settings and avoiding a rewrite when values are unchanged.
+;
+; Upstream behavior/sections:
+; https://www.returntomoria.com/news-updates/dedicated-server
+; https://northbeachgames.freshdesk.com/support/solutions/articles/154000217143-customizing-your-server
+;
+; Current generated-schema/default cross-check:
+; https://low.ms/knowledgebase/server-configuration-for-return-to-moria
+;
+; Durin's Folk DLC upgrade semantics (upgrading an existing world is irreversible):
+; https://northbeachgames.freshdesk.com/support/solutions/articles/154000244719-how-to-update-existing-dedicated-server-saves-for-durin-s-folk
+
+[Main]
+OptionalPassword=${MORIA_CFG_OPTIONAL_PASSWORD}
+
+[World]
+Name=${MORIA_CFG_WORLD_NAME}
+OptionalWorldFilename=${MORIA_CFG_WORLD_FILE}
+
+[World.Create]
+Type=${MORIA_CFG_WORLD_TYPE}
+Seed=${MORIA_CFG_WORLD_SEED}
+Difficulty.Preset=${MORIA_CFG_DIFFICULTY_PRESET}
+Difficulty.Custom.CombatDifficulty=${MORIA_CFG_DIFFICULTY_COMBAT}
+Difficulty.Custom.EnemyAggression=${MORIA_CFG_DIFFICULTY_ENEMY_AGGRESSION}
+Difficulty.Custom.SurvivalDifficulty=${MORIA_CFG_DIFFICULTY_SURVIVAL}
+Difficulty.Custom.MiningDrops=${MORIA_CFG_DIFFICULTY_MINING_DROPS}
+Difficulty.Custom.WorldDrops=${MORIA_CFG_DIFFICULTY_WORLD_DROPS}
+Difficulty.Custom.HordeFrequency=${MORIA_CFG_DIFFICULTY_HORDE_FREQUENCY}
+Difficulty.Custom.SiegeFrequency=${MORIA_CFG_DIFFICULTY_SIEGE_FREQUENCY}
+Difficulty.Custom.PatrolFrequency=${MORIA_CFG_DIFFICULTY_PATROL_FREQUENCY}
+OptionalDLC.Array=${MORIA_CFG_OPTIONAL_DLC}
+UpgradeOptionalDLC.Array=${MORIA_CFG_UPGRADE_OPTIONAL_DLC}
+
+[Host]
+ListenAddress=${MORIA_CFG_LISTEN_ADDRESS}
+ListenPort=${MORIA_CFG_LISTEN_PORT}
+AdvertiseAddress=${MORIA_CFG_ADVERTISE_ADDRESS}
+AdvertisePort=${MORIA_CFG_ADVERTISE_PORT}
+InitialConnectionRetryTime=${MORIA_CFG_INITIAL_CONNECTION_RETRY_TIME}
+AfterDisconnectionRetryTime=${MORIA_CFG_AFTER_DISCONNECTION_RETRY_TIME}
+
+[Console]
+Enabled=${MORIA_CFG_CONSOLE_ENABLED}
+
+[Performance]
+ServerFPS=${MORIA_CFG_SERVER_FPS}
+LoadedAreaLimit=${MORIA_CFG_LOADED_AREA_LIMIT}

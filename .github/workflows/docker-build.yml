@@ -43,7 +43,7 @@ jobs:
       - name: Validate shell scripts
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck
+          sudo apt-get install -y shellcheck gettext-base
           find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r bash -n
           find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
 

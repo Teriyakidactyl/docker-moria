@@ -31,11 +31,29 @@ ENV APP_NAME="moria" \
     STEAM_PLATFORM_TYPE="windows" \
     SERVER_LISTEN_ADDRESS="0.0.0.0" \
     SERVER_PORT="7777" \
-    SERVER_ADVERTISE_ADDRESS="" \
+    SERVER_ADVERTISE_ADDRESS="auto" \
     SERVER_ADVERTISE_PORT="7777" \
+    SERVER_INITIAL_CONNECTION_RETRY_TIME="60" \
+    SERVER_AFTER_DISCONNECTION_RETRY_TIME="600" \
+    SERVER_CONSOLE_ENABLED="true" \
+    SERVER_FPS="60" \
+    SERVER_LOADED_AREA_LIMIT="12" \
     SERVER_PASS="" \
     WORLD_NAME="Moria Docker World" \
     WORLD_FILE="" \
+    WORLD_TYPE="campaign" \
+    WORLD_SEED="random" \
+    WORLD_DIFFICULTY_PRESET="normal" \
+    WORLD_DIFFICULTY_COMBAT="default" \
+    WORLD_DIFFICULTY_ENEMY_AGGRESSION="high" \
+    WORLD_DIFFICULTY_SURVIVAL="default" \
+    WORLD_DIFFICULTY_MINING_DROPS="default" \
+    WORLD_DIFFICULTY_WORLD_DROPS="default" \
+    WORLD_DIFFICULTY_HORDE_FREQUENCY="default" \
+    WORLD_DIFFICULTY_SIEGE_FREQUENCY="default" \
+    WORLD_DIFFICULTY_PATROL_FREQUENCY="default" \
+    WORLD_OPTIONAL_DLC="DurinsFolk" \
+    WORLD_UPGRADE_OPTIONAL_DLC="" \
     SERVER_WORKER_THREADS="4"
 
 USER root
@@ -53,6 +71,10 @@ RUN set -eux; \
     chown root:root /usr/local/bin/winetricks /usr/local/share/moria "${HOOK_DIRECTORIES}/pre-startup"; \
     chmod 0755 /usr/local/share/moria "${HOOK_DIRECTORIES}/pre-startup"
 
+# Moria's current native INI schema/defaults are documented in the template,
+# including links to the upstream dedicated-server/settings sources. Keep the
+# template image-owned; the rendered persistent config remains under /world.
+COPY scripts/container/moria-server-config.owned.ini.in /usr/local/share/moria/moria-server-config.owned.ini.in
 COPY scripts/container/moria.args /usr/local/share/moria/moria.args
 COPY scripts/container/moria-healthcheck.sh /usr/local/bin/moria-healthcheck
 COPY scripts/container/moria-wine-wrapper.sh /usr/local/bin/moria-wine
@@ -61,11 +83,14 @@ COPY scripts/container/hooks/pre-startup/30_moria.sh ${HOOK_DIRECTORIES}/pre-sta
 RUN ln -sf /usr/local/bin/moria-wine /usr/local/bin/moria-wine64 && \
     ln -sf /usr/local/bin/moria-wine /usr/local/bin/moria-wineserver && \
     chown root:root \
+        /usr/local/share/moria/moria-server-config.owned.ini.in \
         /usr/local/share/moria/moria.args \
         /usr/local/bin/moria-healthcheck \
         /usr/local/bin/moria-wine \
         "${HOOK_DIRECTORIES}/pre-startup/30_moria.sh" && \
-    chmod 0644 /usr/local/share/moria/moria.args && \
+    chmod 0644 \
+        /usr/local/share/moria/moria-server-config.owned.ini.in \
+        /usr/local/share/moria/moria.args && \
     chmod 0755 \
         /usr/local/bin/moria-healthcheck \
         /usr/local/bin/moria-wine \
