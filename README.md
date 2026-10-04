@@ -37,28 +37,69 @@ The default game port is UDP `7777`.
 
 ## Configuration
 
-The container exposes a small set of common settings and keeps
-`MoriaServerConfig.ini` as the complete native configuration surface.
+The container exposes every currently known `MoriaServerConfig.ini` setting as
+a Docker environment-variable API. The authoritative behavior reference is the
+official
+[dedicated-server guide](https://www.returntomoria.com/news-updates/dedicated-server)
+and
+[North Beach Games customization guide](https://northbeachgames.freshdesk.com/support/solutions/articles/154000217143-customizing-your-server).
+Durin's Folk upgrade behavior is additionally documented in the official
+[DLC migration article](https://northbeachgames.freshdesk.com/support/solutions/articles/154000244719-how-to-update-existing-dedicated-server-saves-for-durin-s-folk).
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `SERVER_LISTEN_ADDRESS` | `0.0.0.0` | Address Moria binds inside the container |
-| `SERVER_PORT` | `7777` | Internal UDP listen port |
-| `SERVER_ADVERTISE_ADDRESS` | empty | Optional address Moria advertises to clients |
-| `SERVER_ADVERTISE_PORT` | `7777` | External UDP port advertised to clients |
-| `SERVER_PASS` | empty | Optional join password |
-| `WORLD_NAME` | `Moria Docker World` | World/session name |
-| `WORLD_FILE` | empty | Optional existing `.sav` filename |
-| `SERVER_WORKER_THREADS` | `4` | Dedicated-server worker thread count, from 1 through 4 |
-| `STEAM_VALIDATE` | `false` | Run SteamCMD validation during startup update |
-| `UPDATE_ON_START` | `true` | Update the server through SteamCMD before launch |
+The image renders these API values into an image-owned desired-state fragment
+with `envsubst`, then reconciles only the corresponding section/key pairs into
+the persistent `/world/MoriaServerConfig.ini`. Unknown or future native settings
+are preserved. When the API values already match, the persistent file is not
+replaced.
 
-The Moria-specific pre-start hook creates or updates the common values above
-without replacing settings that are not owned by these environment variables.
-For advanced settings, stop the container and edit
-`/world/MoriaServerConfig.ini` directly.
+| Variable | Container default | Native setting | Purpose |
+| --- | --- | --- | --- |
+| `SERVER_PASS` | empty | `[Main] OptionalPassword` | Optional case-sensitive join password |
+| `WORLD_NAME` | `Moria Docker World` | `[World] Name` | World/session name to load or create |
+| `WORLD_FILE` | empty | `[World] OptionalWorldFilename` | Select an existing `.sav` explicitly |
+| `WORLD_TYPE` | `campaign` | `[World.Create] Type` | New-world type: `campaign` or `sandbox` |
+| `WORLD_SEED` | `random` | `[World.Create] Seed` | New-world seed: `random` or an integer |
+| `WORLD_DIFFICULTY_PRESET` | `normal` | `[World.Create] Difficulty.Preset` | `story`, `solo`, `normal`, `hard`, or `custom` |
+| `WORLD_DIFFICULTY_COMBAT` | `default` | `Difficulty.Custom.CombatDifficulty` | Custom combat difficulty |
+| `WORLD_DIFFICULTY_ENEMY_AGGRESSION` | `high` | `Difficulty.Custom.EnemyAggression` | Custom enemy aggression |
+| `WORLD_DIFFICULTY_SURVIVAL` | `default` | `Difficulty.Custom.SurvivalDifficulty` | Custom survival difficulty |
+| `WORLD_DIFFICULTY_MINING_DROPS` | `default` | `Difficulty.Custom.MiningDrops` | Custom ore drop volume |
+| `WORLD_DIFFICULTY_WORLD_DROPS` | `default` | `Difficulty.Custom.WorldDrops` | Custom enemy/world reward drops |
+| `WORLD_DIFFICULTY_HORDE_FREQUENCY` | `default` | `Difficulty.Custom.HordeFrequency` | Custom horde frequency |
+| `WORLD_DIFFICULTY_SIEGE_FREQUENCY` | `default` | `Difficulty.Custom.SiegeFrequency` | Custom siege frequency |
+| `WORLD_DIFFICULTY_PATROL_FREQUENCY` | `default` | `Difficulty.Custom.PatrolFrequency` | Custom patrol frequency |
+| `WORLD_OPTIONAL_DLC` | `DurinsFolk` | `[World.Create] OptionalDLC.Array` | DLC enabled when creating a new world |
+| `WORLD_UPGRADE_OPTIONAL_DLC` | empty | `[World.Create] UpgradeOptionalDLC.Array` | DLC applied to an existing world during upgrade |
+| `SERVER_LISTEN_ADDRESS` | `0.0.0.0` | `[Host] ListenAddress` | Address bound inside the container |
+| `SERVER_PORT` | `7777` | `[Host] ListenPort` | Internal game port |
+| `SERVER_ADVERTISE_ADDRESS` | `auto` | `[Host] AdvertiseAddress` | Address clients are told to connect to; `local` is also supported upstream |
+| `SERVER_ADVERTISE_PORT` | `7777` | `[Host] AdvertisePort` | Port clients are told to connect to; `-1` means use `ListenPort` |
+| `SERVER_INITIAL_CONNECTION_RETRY_TIME` | `60` | `[Host] InitialConnectionRetryTime` | Seconds to retry initial hosting |
+| `SERVER_AFTER_DISCONNECTION_RETRY_TIME` | `600` | `[Host] AfterDisconnectionRetryTime` | Seconds to retry after a hosted session drops |
+| `SERVER_CONSOLE_ENABLED` | `true` | `[Console] Enabled` | Enable Moria's native console |
+| `SERVER_FPS` | `60` | `[Performance] ServerFPS` | Dedicated-server tick/FPS target |
+| `SERVER_LOADED_AREA_LIMIT` | `12` | `[Performance] LoadedAreaLimit` | Loaded-area cap, from 4 through 32 |
+| `SERVER_WORKER_THREADS` | `4` | command line `-NumServerWorkerThreads` | Worker thread count, from 1 through 4 |
+| `SERVER_PUBLISHED_PORT` | `7777` | Docker port publishing only | Host UDP port used by the supplied Compose file |
+| `STEAM_VALIDATE` | `false` | SteamCMD behavior | Validate installed depot during startup update |
+| `UPDATE_ON_START` | `true` | SteamCMD behavior | Check/update the dedicated server before launch |
 
-The permissions and join-message files are also durable:
+The custom difficulty fields accept `verylow`, `low`, `default`, `high`,
+or `veryhigh`; upstream may clamp unsupported extremes for individual
+categories.
+
+> [!CAUTION]
+> `WORLD_UPGRADE_OPTIONAL_DLC` is intentionally empty by default. North Beach
+> Games documents DLC-upgrading an existing world as irreversible. Back up the
+> world before setting it.
+
+> [!WARNING]
+> `SERVER_CONSOLE_ENABLED=false` disables the console path Moria uses to
+> process the container's graceful `SIGINT` shutdown. The image accepts the
+> upstream setting for API completeness, but container stop may then escalate to
+> `SIGKILL` without a graceful save.
+
+The permissions and join-message files remain durable and outside the INI API:
 
 ```text
 /world/MoriaServerPermissions.txt
@@ -83,11 +124,12 @@ A typical Compose deployment uses named volumes for both paths.
 ## Networking
 
 Moria listens on UDP `7777` by default. `SERVER_PORT` controls the internal
-container listen port, while `SERVER_ADVERTISE_PORT` controls the host-facing
-port published by the supplied Compose file and advertised to clients. Keep the
-advertised value aligned with your router/NAT forwarding. `SERVER_ADVERTISE_ADDRESS`
-can be set when the server must publish a specific address instead of relying on
-upstream discovery.
+container listen port, `SERVER_PUBLISHED_PORT` controls the host-side UDP port
+in the supplied Compose file, and `SERVER_ADVERTISE_PORT` is the native value
+reported to clients. Keep the published and advertised values aligned when
+using NAT or a non-default external port. `SERVER_ADVERTISE_ADDRESS=auto`
+retains upstream public-address discovery; `local` requests local-address
+discovery for LAN-only play.
 
 Direct joins require the host/network path to permit the configured UDP port.
 Invite-code joins still depend on the upstream online services used by the

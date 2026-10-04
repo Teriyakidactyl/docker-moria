@@ -13,6 +13,7 @@ export MORIA_WINE_COMMAND="$FAKE_BIN/moria-wine"
 export MORIA_WINESERVER_COMMAND="$FAKE_BIN/moria-wineserver"
 export MORIA_WINETRICKS_CACHE="$TMP_ROOT/winetricks-cache"
 export MORIA_TEST_WINETRICKS_LOG="$TMP_ROOT/winetricks.log"
+export MORIA_CONFIG_TEMPLATE="$REPO_ROOT/scripts/container/moria-server-config.owned.ini.in"
 
 mkdir -p "$FAKE_BIN" "$WINEPREFIX" "$MORIA_WINETRICKS_CACHE"
 
@@ -63,20 +64,45 @@ export PATH="$FAKE_BIN:$PATH"
 export APP_FILES="$TMP_ROOT/app"
 export WORLD_FILES="$TMP_ROOT/world"
 export APP_EXECUTABLE="$APP_FILES/Moria/Binaries/Win64/MoriaServer-Win64-Shipping.exe"
+
+# Exercise every currently known INI setting with non-default values where
+# practical. The API must reconcile these keys without erasing future/native
+# settings it does not own.
 export SERVER_LISTEN_ADDRESS="0.0.0.0"
 export SERVER_PORT="17877"
 export SERVER_ADVERTISE_ADDRESS="game.example.test"
 export SERVER_ADVERTISE_PORT="27877"
+export SERVER_INITIAL_CONNECTION_RETRY_TIME="75"
+export SERVER_AFTER_DISCONNECTION_RETRY_TIME="675"
+export SERVER_CONSOLE_ENABLED="true"
+export SERVER_FPS="45"
+export SERVER_LOADED_AREA_LIMIT="16"
 export SERVER_PASS='friend "of" mine'
 export WORLD_NAME='Khazad-dûm Docker World'
 export WORLD_FILE='MW_TEST_WORLD.sav'
+export WORLD_TYPE="sandbox"
+export WORLD_SEED="424242"
+export WORLD_DIFFICULTY_PRESET="custom"
+export WORLD_DIFFICULTY_COMBAT="high"
+export WORLD_DIFFICULTY_ENEMY_AGGRESSION="veryhigh"
+export WORLD_DIFFICULTY_SURVIVAL="low"
+export WORLD_DIFFICULTY_MINING_DROPS="high"
+export WORLD_DIFFICULTY_WORLD_DROPS="veryhigh"
+export WORLD_DIFFICULTY_HORDE_FREQUENCY="low"
+export WORLD_DIFFICULTY_SIEGE_FREQUENCY="high"
+export WORLD_DIFFICULTY_PATROL_FREQUENCY="verylow"
+export WORLD_OPTIONAL_DLC="DurinsFolk,FutureDLC"
+export WORLD_UPGRADE_OPTIONAL_DLC=""
 export SERVER_WORKER_THREADS="3"
 
 log() {
     :
 }
 
-mkdir -p "$APP_FILES/Moria/Saved/SaveGamesDedicated"          "$APP_FILES/Moria/Binaries/Win64"          "$WORLD_FILES"
+mkdir -p \
+    "$APP_FILES/Moria/Saved/SaveGamesDedicated" \
+    "$APP_FILES/Moria/Binaries/Win64" \
+    "$WORLD_FILES"
 
 printf 'save-data\n' > "$APP_FILES/Moria/Saved/SaveGamesDedicated/MW_TEST_WORLD.sav"
 printf 'permissions\n' > "$APP_FILES/MoriaServerPermissions.txt"
@@ -90,11 +116,28 @@ OptionalPassword=old
 Name="Old World"
 OptionalWorldFilename=
 
+[World.Create]
+Type=campaign
+Seed=random
+Difficulty.Preset=normal
+Difficulty.Custom.CombatDifficulty=default
+Difficulty.Custom.EnemyAggression=high
+Difficulty.Custom.SurvivalDifficulty=default
+Difficulty.Custom.MiningDrops=default
+Difficulty.Custom.WorldDrops=default
+Difficulty.Custom.HordeFrequency=default
+Difficulty.Custom.SiegeFrequency=default
+Difficulty.Custom.PatrolFrequency=default
+OptionalDLC.Array="DurinsFolk"
+UpgradeOptionalDLC.Array=""
+
 [Host]
 ListenAddress=127.0.0.1
 ListenPort=1
 AdvertiseAddress=auto
 AdvertisePort=-1
+InitialConnectionRetryTime=60
+AfterDisconnectionRetryTime=600
 
 [Console]
 Enabled=false
@@ -102,6 +145,10 @@ Enabled=false
 [Performance]
 ServerFPS=30
 LoadedAreaLimit=12
+
+[Future]
+Experimental.FutureSetting=keep-me
+DifficultyXCustomXCombatDifficulty=do-not-touch
 EOF
 
 truncate -s 256 "$APP_EXECUTABLE"
@@ -126,29 +173,61 @@ for filename in MoriaServerConfig.ini MoriaServerPermissions.txt MoriaServerRule
 done
 
 config="$WORLD_FILES/MoriaServerConfig.ini"
-grep -Fqx 'OptionalPassword="friend \"of\" mine"' "$config"
-grep -Fqx 'Name="Khazad-dûm Docker World"' "$config"
-grep -Fqx 'OptionalWorldFilename="MW_TEST_WORLD.sav"' "$config"
-grep -Fqx 'ListenAddress=0.0.0.0' "$config"
-grep -Fqx 'ListenPort=17877' "$config"
-grep -Fqx 'AdvertiseAddress=game.example.test' "$config"
-grep -Fqx 'AdvertisePort=27877' "$config"
-grep -Fqx 'Enabled=true' "$config"
-grep -Fqx 'ServerFPS=30' "$config"
-grep -Fqx 'LoadedAreaLimit=12' "$config"
+for expected in \
+    'OptionalPassword="friend \"of\" mine"' \
+    'Name="Khazad-dûm Docker World"' \
+    'OptionalWorldFilename="MW_TEST_WORLD.sav"' \
+    'Type=sandbox' \
+    'Seed=424242' \
+    'Difficulty.Preset=custom' \
+    'Difficulty.Custom.CombatDifficulty=high' \
+    'Difficulty.Custom.EnemyAggression=veryhigh' \
+    'Difficulty.Custom.SurvivalDifficulty=low' \
+    'Difficulty.Custom.MiningDrops=high' \
+    'Difficulty.Custom.WorldDrops=veryhigh' \
+    'Difficulty.Custom.HordeFrequency=low' \
+    'Difficulty.Custom.SiegeFrequency=high' \
+    'Difficulty.Custom.PatrolFrequency=verylow' \
+    'OptionalDLC.Array="DurinsFolk,FutureDLC"' \
+    'UpgradeOptionalDLC.Array=""' \
+    'ListenAddress=0.0.0.0' \
+    'ListenPort=17877' \
+    'AdvertiseAddress=game.example.test' \
+    'AdvertisePort=27877' \
+    'InitialConnectionRetryTime=75' \
+    'AfterDisconnectionRetryTime=675' \
+    'Enabled=true' \
+    'ServerFPS=45' \
+    'LoadedAreaLimit=16' \
+    'Experimental.FutureSetting=keep-me' \
+    'DifficultyXCustomXCombatDifficulty=do-not-touch'
+do
+    grep -Fqx "$expected" "$config"
+done
 
 subsystem="$(od -An -t u2 -j 220 -N 2 "$APP_EXECUTABLE" | tr -d '[:space:]')"
 test "$subsystem" = "3"
 
+# Same API + same native state must not replace the persistent INI. Content
+# equality alone would miss a pointless atomic rewrite, so retain the inode too.
+config_before="$(sha256sum "$config" | awk '{print $1}')"
+inode_before="$(stat -c %i "$config")"
+source "$HOOK"
+config_after="$(sha256sum "$config" | awk '{print $1}')"
+inode_after="$(stat -c %i "$config")"
+test "$config_before" = "$config_after"
+test "$inode_before" = "$inode_after"
+test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
+
 # Reproduce the production failure where /app survives with the correct Saved
 # symlink but /world is fresh or incomplete. The hook must repair the target
-# directory instead of treating the dangling-but-correct symlink as converged.
-config_before="$(sha256sum "$config" | awk '{print $1}')"
+# directory without touching an already-converged INI.
 rm -rf "$WORLD_FILES/Saved"
 test -L "$APP_FILES/Moria/Saved"
 test "$(readlink "$APP_FILES/Moria/Saved")" = "$WORLD_FILES/Saved"
 test ! -e "$WORLD_FILES/Saved"
 
+inode_before="$(stat -c %i "$config")"
 source "$HOOK"
 
 test -d "$WORLD_FILES/Saved"
@@ -156,9 +235,7 @@ test -L "$APP_FILES/Moria/Saved"
 test "$(readlink "$APP_FILES/Moria/Saved")" = "$WORLD_FILES/Saved"
 touch "$WORLD_FILES/Saved/.write-probe"
 rm -f "$WORLD_FILES/Saved/.write-probe"
-
-config_after="$(sha256sum "$config" | awk '{print $1}')"
-test "$config_before" = "$config_after"
+test "$(stat -c %i "$config")" = "$inode_before"
 test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
 
 echo "Moria hook contract test passed"
