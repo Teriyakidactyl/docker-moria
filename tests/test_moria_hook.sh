@@ -219,14 +219,15 @@ test "$config_before" = "$config_after"
 test "$inode_before" = "$inode_after"
 test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
 
-# Empty is a meaningful OptionalDLC value. It must not be replaced by the
-# container default simply because shell parameter expansion treats it as null.
-export WORLD_OPTIONAL_DLC=""
+# Optional DLC is opt-in. Unsetting the variable must converge to an empty
+# native value so a newly created world does not unexpectedly require an
+# expansion. Explicit DLC remains supported when the operator chooses it.
+unset WORLD_OPTIONAL_DLC
 source "$HOOK"
 grep -Fqx 'OptionalDLC.Array=""' "$config"
-export WORLD_OPTIONAL_DLC="DurinsFolk,FutureDLC"
+export WORLD_OPTIONAL_DLC="DurinsFolk"
 source "$HOOK"
-grep -Fqx 'OptionalDLC.Array="DurinsFolk,FutureDLC"' "$config"
+grep -Fqx 'OptionalDLC.Array="DurinsFolk"' "$config"
 
 # Reproduce the production failure where /app survives with the correct Saved
 # symlink but /world is fresh or incomplete. The hook must repair the target

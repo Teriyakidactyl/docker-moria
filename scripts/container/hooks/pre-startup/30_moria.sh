@@ -400,7 +400,7 @@ render_desired_config() {
     validate_single_line SERVER_PASS "${SERVER_PASS:-}"
     validate_single_line WORLD_NAME "${WORLD_NAME:-Moria Docker World}"
     validate_single_line WORLD_FILE "${WORLD_FILE:-}"
-    validate_single_line WORLD_OPTIONAL_DLC "${WORLD_OPTIONAL_DLC-DurinsFolk}"
+    validate_single_line WORLD_OPTIONAL_DLC "${WORLD_OPTIONAL_DLC:-}"
     validate_single_line WORLD_UPGRADE_OPTIONAL_DLC "${WORLD_UPGRADE_OPTIONAL_DLC:-}"
 
     world_type="${WORLD_TYPE:-campaign}"
@@ -488,7 +488,7 @@ EOF
     MORIA_CFG_DIFFICULTY_HORDE_FREQUENCY="$difficulty_horde_frequency"
     MORIA_CFG_DIFFICULTY_SIEGE_FREQUENCY="$difficulty_siege_frequency"
     MORIA_CFG_DIFFICULTY_PATROL_FREQUENCY="$difficulty_patrol_frequency"
-    MORIA_CFG_OPTIONAL_DLC="$(quote_ini_string "${WORLD_OPTIONAL_DLC-DurinsFolk}")"
+    MORIA_CFG_OPTIONAL_DLC="$(quote_ini_string "${WORLD_OPTIONAL_DLC:-}")"
     MORIA_CFG_UPGRADE_OPTIONAL_DLC="$(quote_ini_string "${WORLD_UPGRADE_OPTIONAL_DLC:-}")"
     MORIA_CFG_LISTEN_ADDRESS="${SERVER_LISTEN_ADDRESS:-0.0.0.0}"
     MORIA_CFG_LISTEN_PORT="${SERVER_PORT:-7777}"

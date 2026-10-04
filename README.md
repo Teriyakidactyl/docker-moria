@@ -68,7 +68,7 @@ replaced.
 | `WORLD_DIFFICULTY_HORDE_FREQUENCY` | `default` | `Difficulty.Custom.HordeFrequency` | Custom horde frequency |
 | `WORLD_DIFFICULTY_SIEGE_FREQUENCY` | `default` | `Difficulty.Custom.SiegeFrequency` | Custom siege frequency |
 | `WORLD_DIFFICULTY_PATROL_FREQUENCY` | `default` | `Difficulty.Custom.PatrolFrequency` | Custom patrol frequency |
-| `WORLD_OPTIONAL_DLC` | `DurinsFolk` | `[World.Create] OptionalDLC.Array` | DLC enabled when creating a new world |
+| `WORLD_OPTIONAL_DLC` | empty | `[World.Create] OptionalDLC.Array` | Optional DLC applied when creating a new world; expansion content is opt-in |
 | `WORLD_UPGRADE_OPTIONAL_DLC` | empty | `[World.Create] UpgradeOptionalDLC.Array` | DLC applied to an existing world during upgrade |
 | `SERVER_LISTEN_ADDRESS` | `0.0.0.0` | `[Host] ListenAddress` | Address bound inside the container |
 | `SERVER_PORT` | `7777` | `[Host] ListenPort` | Internal game port |
@@ -86,8 +86,9 @@ replaced.
 
 The custom difficulty fields accept `verylow`, `low`, `default`, `high`,
 or `veryhigh`; upstream may clamp unsupported extremes for individual
-categories. An explicitly empty `WORLD_OPTIONAL_DLC` is preserved, so an
-operator can intentionally create a new world without optional DLC.
+categories. `WORLD_OPTIONAL_DLC` is deliberately empty by default so a new
+server remains joinable by base-game players. Set it explicitly only when the
+new world is intended to require that expansion.
 
 Container defaults are the Docker-facing contract and are called out separately
 from upstream defaults where they intentionally differ. In particular, the
@@ -97,9 +98,11 @@ native examples use the bind-all empty address and may use `-1` for
 `AdvertisePort`; both native forms are supported by the hook.
 
 > [!CAUTION]
-> `WORLD_UPGRADE_OPTIONAL_DLC` is intentionally empty by default. North Beach
-> Games documents DLC-upgrading an existing world as irreversible. Back up the
-> world before setting it.
+> Optional DLC is opt-in. Enabling `WORLD_OPTIONAL_DLC` on creation makes the
+> resulting world require that expansion, and North Beach Games documents
+> existing-world DLC upgrades as irreversible. `WORLD_UPGRADE_OPTIONAL_DLC`
+> therefore also remains empty by default. Back up an existing world before
+> deliberately upgrading it.
 
 > [!WARNING]
 > `SERVER_CONSOLE_ENABLED=false` disables the console path Moria uses to
