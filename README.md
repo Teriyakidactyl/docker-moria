@@ -86,7 +86,15 @@ replaced.
 
 The custom difficulty fields accept `verylow`, `low`, `default`, `high`,
 or `veryhigh`; upstream may clamp unsupported extremes for individual
-categories.
+categories. An explicitly empty `WORLD_OPTIONAL_DLC` is preserved, so an
+operator can intentionally create a new world without optional DLC.
+
+Container defaults are the Docker-facing contract and are called out separately
+from upstream defaults where they intentionally differ. In particular, the
+container retains `SERVER_LISTEN_ADDRESS=0.0.0.0` and
+`SERVER_ADVERTISE_PORT=7777` for backward compatibility even though current
+native examples use the bind-all empty address and may use `-1` for
+`AdvertisePort`; both native forms are supported by the hook.
 
 > [!CAUTION]
 > `WORLD_UPGRADE_OPTIONAL_DLC` is intentionally empty by default. North Beach
