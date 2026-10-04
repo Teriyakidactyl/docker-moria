@@ -96,16 +96,25 @@ set_ini_value() {
 persist_path() {
     local source_path="$1"
     local target_path="$2"
+    local target_kind="${3:-file}"
     local source_parent
 
     source_parent="$(dirname "$source_path")"
     mkdir -p "$source_parent" "$(dirname "$target_path")"
 
+    # A persistent /app volume can retain the correct symlink while /world is
+    # replaced, freshly restored, or otherwise lacks the directory it points
+    # at. A symlink-only fast path would then preserve a dangling link and Moria
+    # would fail when creating Saved/Config/Status.json or its first world save.
+    # Directory callers must therefore materialize the target before we decide
+    # that an already-correct symlink is converged. File targets are different:
+    # the application may legitimately create the target file later.
+    if [ "$target_kind" = "directory" ]; then
+        mkdir -p "$target_path"
+    fi
+
     if [ -L "$source_path" ]; then
         if [ "$(readlink "$source_path")" = "$target_path" ]; then
-            if [[ "$target_path" == */ ]]; then
-                mkdir -p "$target_path"
-            fi
             return 0
         fi
         rm -f "$source_path"
@@ -238,7 +247,7 @@ validate_single_line SERVER_LISTEN_ADDRESS "${SERVER_LISTEN_ADDRESS:-0.0.0.0}"
 validate_single_line SERVER_ADVERTISE_ADDRESS "${SERVER_ADVERTISE_ADDRESS:-}"
 
 saved_target="$WORLD_FILES/Saved"
-persist_path "$APP_FILES/Moria/Saved" "$saved_target"
+persist_path "$APP_FILES/Moria/Saved" "$saved_target" directory
 
 for filename in MoriaServerConfig.ini MoriaServerPermissions.txt MoriaServerRules.txt; do
     persist_path "$APP_FILES/$filename" "$WORLD_FILES/$filename"

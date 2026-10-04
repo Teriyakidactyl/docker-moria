@@ -18,3 +18,9 @@ executable's PE subsystem so `SIGINT` can reach Moria's console shutdown path.
 The Visual C++ install is marked inside the Wine prefix after Winetricks
 succeeds, so later starts reuse it while a fresh `/app` volume receives the
 dependency automatically.
+
+Persistence convergence validates both sides of the Saved-directory mapping.
+An existing `/app/Moria/Saved -> /world/Saved` symlink is not sufficient by
+itself: the hook also materializes `/world/Saved` so a retained application
+volume cannot leave Moria with a dangling save path when the world volume is
+fresh, restored, or incomplete.

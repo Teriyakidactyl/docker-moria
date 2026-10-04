@@ -140,8 +140,23 @@ grep -Fqx 'LoadedAreaLimit=12' "$config"
 subsystem="$(od -An -t u2 -j 220 -N 2 "$APP_EXECUTABLE" | tr -d '[:space:]')"
 test "$subsystem" = "3"
 
+# Reproduce the production failure where /app survives with the correct Saved
+# symlink but /world is fresh or incomplete. The hook must repair the target
+# directory instead of treating the dangling-but-correct symlink as converged.
 config_before="$(sha256sum "$config" | awk '{print $1}')"
+rm -rf "$WORLD_FILES/Saved"
+test -L "$APP_FILES/Moria/Saved"
+test "$(readlink "$APP_FILES/Moria/Saved")" = "$WORLD_FILES/Saved"
+test ! -e "$WORLD_FILES/Saved"
+
 source "$HOOK"
+
+test -d "$WORLD_FILES/Saved"
+test -L "$APP_FILES/Moria/Saved"
+test "$(readlink "$APP_FILES/Moria/Saved")" = "$WORLD_FILES/Saved"
+touch "$WORLD_FILES/Saved/.write-probe"
+rm -f "$WORLD_FILES/Saved/.write-probe"
+
 config_after="$(sha256sum "$config" | awk '{print $1}')"
 test "$config_before" = "$config_after"
 test "$(wc -l < "$MORIA_TEST_WINETRICKS_LOG")" -eq 1
